@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: zmkfirmware/zmk-build-essential:latest
+    container: ghcr.io/zmkfirmware/zmk-build-essential:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3

@@ -1,0 +1,28 @@
+name: Build ZMK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: zmkfirmware/zmk-build-essential:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: zmk
+          key: zmk-v3.5
+      - name: Init
+        run: |
+          west init -l config
+          west update
+          west zephyr-export
+      - name: Build
+        run: |
+          west build -b nice_nano_v2 -- -DSHIELD=myboard
+          cp build/zephyr/zmk.uf2 myboard.uf2
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          path: myboard.uf2

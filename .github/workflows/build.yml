@@ -22,7 +22,7 @@ jobs:
           west build -b nice_nano_v2 -- -DSHIELD=myboard
           cp build/zephyr/zmk.uf2 myboard.uf2
       - name: Upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: firmware
           path: myboard.uf2

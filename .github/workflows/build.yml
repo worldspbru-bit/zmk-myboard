@@ -1,28 +1,57 @@
-name: Build ZMK
-on: [push, workflow_dispatch]
+name: Build ZMK Firmware
+
+on: 
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ghcr.io/zmkfirmware/zmk-build-essential:latest
+    container:
+      image: zmkfirmware/zmk-build-arm:3.5-branch
+    name: Build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Cache
-        uses: actions/cache@v3
+        uses: actions/checkout@v4
         with:
-          path: zmk
-          key: zmk-v3.5
-      - name: Init
+          submodules: recursive
+      
+      - name: Cache west modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-zmk-modules
+        with:
+          path: |
+            zmk/modules/
+            zmk/tools/
+            zmk/zephyr/
+            zmk/bootloader/
+            zmk/build/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('zmk/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      
+      - name: West Init
         run: |
-          west init -l config
+          west init -l zmk/app
           west update
           west zephyr-export
-      - name: Build
+      
+      - name: Build firmware
         run: |
-          west build -b nice_nano_v2 -- -DSHIELD=myboard
-          cp build/zephyr/zmk.uf2 myboard.uf2
-      - name: Upload
+          west build -p=always -b nice_nano_v2 zmk/app -- \
+            -DSHIELD=your_keyboard_name \
+            -DZMK_CONFIG=${GITHUB_WORKSPACE}/config
+      
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: myboard.uf2
+          path: zmk/app/build/zephyr/zmk.uf2
